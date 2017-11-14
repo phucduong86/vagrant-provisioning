@@ -75,14 +75,14 @@
       src: '/vagrant/provisioning/roles/{{ tomcat_inst_name }}/templates/sample.war'
       dest: '/opt/{{ tomcat_inst_name }}/webapps/'
       force: no
-  - name: Configure vhost for Tomcat instance
-    template: src={{ item.src }} dest={{ item.dest }} owner=apache group=webadmin mode={{ item.mode }}
-    with_items:
-      - { src: "{{ tomcat_inst_name }}-vhost.conf", dest: "{{ apache_path }}/sites-available/", mode: "0774" }  
-
-  - name: Create symlink to enable new vhost
-    file:
-      src: '/etc/httpd/sites-available/{{tomcat_inst_name}}-vhost.conf'
-      dest: '/etc/httpd/sites-enabled/{{tomcat_inst_name}}-vhost.conf'
-      state: link
-    notify: Restart httpd
+#  - name: Configure vhost for Tomcat instance
+#    template: src={{ item.src }} dest={{ item.dest }} owner=apache group=webadmin mode={{ item.mode }}
+#    with_items:
+#      - { src: "{{ tomcat_inst_name }}-vhost.conf", dest: "{{ apache_path }}/sites-available/", mode: "0774" }  
+#
+#  - name: Create symlink to enable new vhost
+#    file:
+#      src: '/etc/httpd/sites-available/{{tomcat_inst_name}}-vhost.conf'
+#      dest: '/etc/httpd/sites-enabled/{{tomcat_inst_name}}-vhost.conf'
+#      state: link
+#    notify: Restart httpd

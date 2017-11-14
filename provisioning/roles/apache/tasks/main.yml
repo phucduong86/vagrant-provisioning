@@ -31,7 +31,18 @@
       - src: workers.properties
         dest: /etc/httpd/conf/
     notify: Restart httpd
-  
+
+  - name: Configure vhost for Tomcat instances
+    template: src={{ item.src }} dest={{ item.dest }} owner=apache group=webadmin mode={{ item.mode }}
+    with_items:
+      - { src: "httpd-vhost.conf", dest: "{{ apache_path }}/sites-available/", mode: "0774" }  
+
+  - name: Create symlink to enable new vhost
+    file:
+      src: '/etc/httpd/sites-available/httpd-vhost.conf'
+      dest: '/etc/httpd/sites-enabled/httpd-vhost.conf'
+      state: link
+    
   - name: Copy mod_jk module
     copy:
       src: /vagrant/provisioning/roles/apache/templates/mod_jk.so

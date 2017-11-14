@@ -35,4 +35,9 @@ Instruction to prepare a Role for a new Tomcat Instance
   worker.tc-sample.host=localhost
   worker.tc-sample.port=8209
 
-7. Run vagrant reload
+7. Update /roles/apache/templates/httpd-vhost.conf
+  
+  Add the following line:
+  JkMount /app-name* tc-app-name
+
+8. Run vagrant reload

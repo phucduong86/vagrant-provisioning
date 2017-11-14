@@ -1,0 +1,10 @@
+---
+  - hosts: webservers
+    remote_user: root
+    roles:
+      - common
+      - apache
+      - java
+      - tomcat_base
+      - tc-hello-world
+      - tc-sample

@@ -1,0 +1,9 @@
+jdk_path: /usr/java/latest
+jre_path: /usr/java/latest/jre
+jdk_version: 9.0.1
+jre_version: 9.0.1
+tomcat_version: 9.0.1
+apache_path: /etc/httpd
+tomcat_path: /opt/tomcat_base
+http_port: 80
+https_port: 443

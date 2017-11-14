@@ -1,0 +1,57 @@
+---
+  - name: Check if tomcat is already installed
+    stat:
+      path: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }}"
+    register: tomcat_check
+  
+  - set_fact:
+      install_tomcat: tomcat_check.stat.exists == false
+
+  - set_fact:
+      tomcat_archive: 'apache-tomcat-{{ tomcat_version }}.tar.gz'
+
+  - set_fact:
+      tomcat_archive_path: /tmp/{{ tomcat_archive }}
+      tomcat_unpack_path: /tmp
+
+  # Copy from synced folder
+  - name: Fetch tomcat archive
+    copy:
+      src: '/vagrant/packages/java-tomcat/apache-tomcat-{{ tomcat_version }}.tar.gz'
+      dest: '{{ tomcat_archive_path }}'
+    when: install_tomcat
+
+  - name: Unzip tomcat archive
+    unarchive:
+      src: "{{ tomcat_archive_path }}"
+      dest: "{{ tomcat_unpack_path }}"
+      copy: no
+    when: install_tomcat
+
+  - name: Re-home tomcat
+    shell: >
+      mv {{ tomcat_unpack_path }}/apache-tomcat-{{ tomcat_version}}
+      {{ tomcat_install_path }}/
+    when: install_tomcat
+
+  - name: Cleanup tomcat archive file
+    file: path={{ tomcat_archive_path }} state=absent
+
+  - name: Create tomcat group
+    group: name=tomcat state=present
+    when: install_tomcat
+
+  - set_fact: 
+      tomcat_installed_path: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version}}"
+  - name: Create tomcat user
+    user: name=tomcat state=present group=tomcat home={{ tomcat_installed_path }} shell=/sbin/nologin
+    when: install_tomcat
+
+  - name: Change ownership of tomcat dir
+    file: path={{ tomcat_installed_path }} owner=tomcat group=webadmin state=directory recurse=yes
+
+  - name: Create symlink to tomcat base
+    file:
+      src: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version}}"
+      dest: "{{ tomcat_path }}"
+      state: link      

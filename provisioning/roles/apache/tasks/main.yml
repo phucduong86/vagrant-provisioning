@@ -1,0 +1,56 @@
+---
+  - name: Install apache
+    yum: name="{{ item }}" state=present
+    with_items:
+      - /vagrant/packages/httpd/apr-1.4.8-3.el7.x86_64.rpm
+      - /vagrant/packages/httpd/apr-util-1.5.2-6.el7.x86_64.rpm
+      - /vagrant/packages/httpd/httpd-2.4.6-67.el7.centos.6.x86_64.rpm
+      - /vagrant/packages/httpd/httpd-tools-2.4.6-67.el7.centos.6.x86_64.rpm
+      - /vagrant/packages/httpd/mailcap-2.1.41-2.el7.noarch.rpm
+      - /vagrant/packages/httpd/mod_ssl-2.4.6-67.el7.centos.6.x86_64.rpm
+      - /vagrant/packages/httpd/httpd-devel-2.4.6-67.el7.centos.6.x86_64.rpm
+      - /vagrant/packages/httpd/apr-devel-1.4.8-3.el7.x86_64.rpm
+      - /vagrant/packages/httpd/apr-util-devel-1.5.2-6.el7.x86_64.rpm
+      - /vagrant/packages/httpd/gcc-4.8.5-16.el7.x86_64.rpm
+      - /vagrant/packages/httpd/gcc-c++-4.8.5-16.el7.x86_64.rpm
+      - /vagrant/packages/httpd/make-3.82-23.el7.x86_64.rpm
+      - /vagrant/packages/httpd/autoconf-2.69-11.el7.noarch.rpm
+      - /vagrant/packages/httpd/libtool-2.4.2-22.el7_3.x86_64.rpm
+  - name: Create vhost folders
+    file: path={{ item }} state=directory
+    with_items:
+      - /etc/httpd/sites-available
+      - /etc/httpd/sites-enabled 
+  - name: Configure apache
+    template: src={{ item.src }} dest={{ item.dest }} owner=root group=root mode=0644
+    with_items:
+      - src: httpd.conf
+        dest: /etc/httpd/conf/
+      - src: mod_jk.conf
+        dest: /etc/httpd/conf.d/
+      - src: workers.properties
+        dest: /etc/httpd/conf/
+    notify: Restart httpd
+  
+  - name: Copy mod_jk module
+    copy:
+      src: /vagrant/provisioning/roles/apache/templates/mod_jk.so
+      dest: /etc/httpd/modules/
+      owner: root
+      group: root
+      force: no
+      mode: 0755
+  - name: Create mod_jk folder
+    file: path=/var/run/mod_jk state=directory
+
+  - name: Change ownership of mod_jk dir
+    file: path=/var/run/mod_jk owner=apache group=webadmin state=directory recurse=yes
+
+  - name: Assign ownership of html file dir
+    file: path=/var/www/html owner=apache group=webadmin mode=0775
+
+  - name: Permit writing to log dir
+    file: path=/var/log/httpd owner=apache group=webadmin mode=0775
+
+  - name: Ensure apache starts by default
+    service: name=httpd enabled=yes state=started

@@ -1,0 +1,88 @@
+---
+  - name: Check tomcat dir
+    stat: path={{ tomcat_inst_path }}
+    register: tomcat_inst_check
+
+  - set_fact:
+      install_tomcat_inst: tomcat_inst_check.stat.exists == false
+
+  - set_fact:
+      tomcat_archive: 'apache-tomcat-{{ tomcat_version }}.tar.gz'
+
+  - set_fact:
+      tomcat_archive_path: /tmp/{{ tomcat_archive }}
+      tomcat_unpack_path: /tmp
+
+  # Copy from synced folder
+  - name: Fetch tomcat archive
+    copy:
+      src: '/vagrant/packages/java-tomcat/apache-tomcat-{{ tomcat_version }}.tar.gz'
+      dest: '{{ tomcat_archive_path }}'
+    when: install_tomcat_inst
+
+  - name: Unzip tomcat archive
+    unarchive:
+      src: "{{ tomcat_archive_path }}"
+      dest: "{{ tomcat_unpack_path }}"
+      copy: no
+    when: install_tomcat_inst
+
+  - name: Re-home tomcat
+    shell: >
+      mv -T {{ tomcat_unpack_path }}/apache-tomcat-{{ tomcat_version}}
+      {{ tomcat_inst_path }}
+    when: install_tomcat_inst
+
+  - name: Cleanup tomcat archive file
+    file: path={{ tomcat_archive_path }} state=absent
+  
+  - name: Clean up unnecessary library
+    file: path='{{ tomcat_inst_path }}/lib' state=absent
+
+  - name: Change ownership of tomcat dir
+    file: path={{ tomcat_inst_path }} owner=tomcat group=webadmin state=directory recurse=yes
+
+  - name: Configure hello world instance
+    template: src={{ item.src }} dest={{ item.dest }} owner=tomcat group=webadmin mode={{ item.mode }} 
+    with_items:
+      - { src: "server.xml", dest: "{{ tomcat_inst_path }}/conf/", mode: "0600" }
+    #  - { src: "web.xml", dest: "{{ tomcat_inst_path }}/conf/", mode: "0600" } #default
+      - { src: "tomcat-users.xml", dest: "{{ tomcat_inst_path }}/conf/", mode: "0600" }
+      - { src: "setenv.sh", dest: "{{ tomcat_inst_path }}/bin/", mode: "0600" }
+      - { src: "host-manager-context.xml", dest: "{{ tomcat_inst_path }}/webapps/host-manager/META-INF/context.xml", mode: "0600" }
+      - { src: "manager-context.xml", dest: "{{ tomcat_inst_path }}/webapps/manager/META-INF/context.xml", mode: "0600" }
+    notify: Restart tomcat instance
+  
+  - name: Place service script
+    template: src=tc-hello-world dest=/etc/init.d/ owner=root group=root mode=0755
+
+  - name: Check if tomcat service has been created
+    shell: chkconfig --list | grep tc-hello-world
+    ignore_errors: yes
+    changed_when: false
+    register: check_tomcat
+  
+  - name: Create tomcat service
+    shell: chkconfig --add tc-hello-world
+    when: not 'tc-hello-world' in check_tomcat.stdout
+
+  - name: Ensure tomcat service autostarts
+    service: name={{ tomcat_inst_name }} enabled=yes state=started
+
+  ###APP SPECIFIC###
+  - name: Deploy hello world app
+    copy:
+      src: '/vagrant/provisioning/roles/{{ tomcat_inst_name }}/templates/hello-world.war'
+      dest: '/opt/{{ tomcat_inst_name }}/webapps/'
+      force: no
+  - name: Configure vhost for Tomcat instance
+    template: src={{ item.src }} dest={{ item.dest }} owner=apache group=webadmin mode={{ item.mode }}
+    with_items:
+      - { src: "tc-hello-world-vhost.conf", dest: "{{ apache_path }}/sites-available/", mode: "0774" }  
+
+  - name: Create symlink to enable new vhost
+    file:
+      src: /etc/httpd/sites-available/tc-hello-world-vhost.conf
+      dest: /etc/httpd/sites-enabled/tc-hello-world-vhost.conf
+      state: link
+    notify: Restart httpd

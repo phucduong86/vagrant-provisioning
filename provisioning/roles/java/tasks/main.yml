@@ -1,0 +1,41 @@
+---
+  - name: Check if jdk exists
+    stat: path="/usr/java/jdk-{{ jdk_version }}"
+    register: jdk_stat
+  
+  - name: Check if jre exists
+    stat: path="/usr/java/jre-{{ jre_version }}"
+    register: jre_stat
+  
+  - set_fact:
+      install_jdk: jdk_stat.stat.exists == false
+  - set_fact:
+      install_jre: jre_stat.stat.exists == false
+
+  - set_fact:
+      jdk_rpm: "jdk-{{ jdk_version }}_linux-x64_bin.rpm"
+
+  - set_fact:
+      jre_rpm: "jre-{{ jre_version}}_linux-x64_bin.rpm"    
+  
+  - name: Install Oracle jdk
+    yum: name=/vagrant/packages/java-tomcat/{{ jdk_rpm }} state=present
+    when: install_jdk
+
+  - name: Install Oracle jre
+    yum: name=/vagrant/packages/java-tomcat/{{ jre_rpm }} state=present
+    when: install_jre
+
+  - name: Create link for newest jdk
+    file: src="/usr/java/jdk-{{ jdk_version }}" dest=/usr/java/latest state=link
+
+  - name: Create link for newest jre
+    file: src="/usr/java/jre-{{ jre_version }}" dest=/usr/java/latest/jre state=link
+
+  - name: Configure global java env vars
+    lineinfile: dest=/etc/environment regexp={{ item.regexp }} line={{ item.line }}
+    with_items:
+      - regexp: ^JAVA_HOME
+        line: JAVA_HOME=/usr/java/latest/
+      - regexp: ^JRE_HOME
+        line: JRE_HOME=/usr/java/latest/jre

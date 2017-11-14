@@ -1,0 +1,30 @@
+---
+  - name: Install EPEL repo
+    yum:
+      name: epel-release
+      state: present
+
+  - name: Set SELinux state
+    selinux: policy=targeted state=permissive
+
+  - name: Create groups
+    group: name=webadmin state=present gid=1001
+
+  - name: Create users
+    user:
+      name: vagrant
+      state: present
+      groups: webadmin
+      append: yes
+      generate_ssh_key: yes
+
+  - name: Install required/useful packages
+    yum: name={{ item }} state=present
+    with_items:
+      - git
+      - wget
+      - vim
+      - unzip
+      - man
+      - patch
+      - tree

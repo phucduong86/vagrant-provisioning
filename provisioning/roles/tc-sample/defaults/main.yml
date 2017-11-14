@@ -1,0 +1,12 @@
+---
+  app_name: sample
+  tomcat_version: 9.0.1
+  tomcat_inst_name: 'tc-{{ app_name }}'
+  tomcat_inst_port: 8280
+  tomcat_inst_ajp_port: 8209
+  tomcat_inst_shutdown_port: 8205
+  tomcat_inst_path: "/opt/{{ tomcat_inst_name }}"
+  catalina_pid: "{{ tomcat_inst_path }}/{{ tomcat_inst_name }}.pid"
+  #tomcat_user: tomcat
+  #tomcat_password: tomcat
+  

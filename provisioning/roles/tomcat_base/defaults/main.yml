@@ -1,0 +1,4 @@
+---
+  tomcat_user: tomcat
+  tomcat_password: tomcat
+  tomcat_install_path: /opt

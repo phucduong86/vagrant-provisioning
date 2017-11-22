@@ -30,6 +30,8 @@ Vagrant.configure("2") do |config|
     ansible.limit = "all"
     ansible.raw_arguments = ["--connection=local"]
     ansible.become = true
+# Enable the line below if detail logging is reqired
+#    ansible.verbose = '-vvv'
     ansible.inventory_path = "provisioning/hosts"
     ansible.playbook = "provisioning/site.yml"
   end
